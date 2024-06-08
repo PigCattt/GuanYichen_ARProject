@@ -15,6 +15,7 @@ public class Fold_Unfold : MonoBehaviour
     private float nextRotationTime;
     private bool startRotation = false; // Flag to control rotation start
     private bool startTranslate = false; // Flag to check if the object has been transformed
+    private Vector3 initialPosition; // The initial position of the translateObject
 
     void Start()
     {
@@ -29,62 +30,60 @@ public class Fold_Unfold : MonoBehaviour
         {
             intervals.Add(angles[i] / speed);
         }
+
+        if (translateObject != null)
+        {
+            initialPosition = translateObject.transform.position;
+        }
     }
 
     void Update()
     {
-        // Rotate objects if rotation has started
         if (startRotation)
         {
-            RotateObjects();
+            // Rotate the current object if within the interval
+            if (Time.time < nextRotationTime)
+            {
+                RotateOneObj(myObjs[currentObjIndex]);
+            }
+            // Move to the next object when the interval elapses
+            else if (currentObjIndex < myObjs.Count)
+            {
+                currentObjIndex++;
+                if (currentObjIndex < myObjs.Count)
+                {
+                    nextRotationTime = Time.time + intervals[currentObjIndex]; // Set the time for the next rotation
+                }
+                else
+                {
+                    startRotation = false; // Stop rotation after all objects have been rotated
+                }
+            }
         }
 
-        // Translate object if translation has started
-        if (startTranslate)
+        if (startTranslate && translateObject != null)
         {
             TranslateObject();
         }
     }
 
-    private void RotateObjects()
-    {
-        if (Time.time < nextRotationTime && currentObjIndex < myObjs.Count)
-        {
-            RotateOneObj(myObjs[currentObjIndex]);
-        }
-        else if (currentObjIndex < myObjs.Count)
-        {
-            currentObjIndex++;
-            if (currentObjIndex < myObjs.Count)
-            {
-                nextRotationTime = Time.time + intervals[currentObjIndex];
-            }
-            else
-            {
-                startRotation = false; // Stop rotation after all objects have been rotated
-            }
-        }
-    }
-
     private void RotateOneObj(GameObject obj)
     {
-        obj.transform.Rotate(0, speed * Time.deltaTime, 0, Space.Self); // Only rotate around the y-axis
+        obj.transform.Rotate(0, speed * Time.deltaTime, 0, Space.Self); // Rotate around the y-axis only
     }
 
     private void TranslateObject()
     {
-        Vector3 newPosition = translateObject.transform.position - new Vector3(0f, translateDistance, 0f);
+        // Calculate the target position
+        Vector3 targetPosition = initialPosition - new Vector3(0f, translateDistance, 0f);
 
-        translateObject.transform.position = Vector3.Lerp(translateObject.transform.position, newPosition, translateSpeed * Time.deltaTime);
+        // Move the object towards the target position using MoveTowards
+        translateObject.transform.position = Vector3.MoveTowards(translateObject.transform.position, targetPosition, translateSpeed * Time.deltaTime);
 
-        if (Vector3.Distance(translateObject.transform.position, newPosition) < 0.01f)
+        // Check if the object has reached the target position
+        if (translateObject.transform.position == targetPosition)
         {
-            startTranslate = false;
-        }
-        else if (Vector3.Distance(translateObject.transform.position, newPosition) <= 0.1f)
-        {
-            translateObject.transform.position = newPosition;
-            startTranslate = false;
+            startTranslate = false; // Stop translating
         }
     }
 
@@ -97,9 +96,11 @@ public class Fold_Unfold : MonoBehaviour
             startRotation = true;
             nextRotationTime = Time.time + intervals[currentObjIndex]; // Initialize nextRotationTime
         }
-        if (!startTranslate)
+
+        if (translateObject != null)
         {
             startTranslate = true;
+            initialPosition = translateObject.transform.position; // Reset initial position
         }
     }
 }

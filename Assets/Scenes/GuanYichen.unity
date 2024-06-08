@@ -837,8 +837,8 @@ MonoBehaviour:
   - 90
   speed: 40
   translateObject: {fileID: 647809944}
-  translateDistance: 1
-  translateSpeed: 10
+  translateDistance: 10
+  translateSpeed: 1
 --- !u!1 &1256557296
 GameObject:
   m_ObjectHideFlags: 0
