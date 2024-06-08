@@ -16,6 +16,7 @@ public class Fold_Unfold : MonoBehaviour
     private bool startRotation = false; // Flag to control rotation start
     private bool startTranslate = false; // Flag to check if the object has been transformed
     private Vector3 initialPosition; // The initial position of the translateObject
+    private bool isFolding = false; // Flag to track whether folding or unfolding
 
     void Start()
     {
@@ -69,13 +70,15 @@ public class Fold_Unfold : MonoBehaviour
 
     private void RotateOneObj(GameObject obj)
     {
-        obj.transform.Rotate(0, speed * Time.deltaTime, 0, Space.Self); // Rotate around the y-axis only
+        float rotationSpeed = isFolding ? speed : -speed;
+        obj.transform.Rotate(0, rotationSpeed * Time.deltaTime, 0, Space.Self); // Rotate around the y-axis only
     }
 
     private void TranslateObject()
     {
         // Calculate the target position
-        Vector3 targetPosition = initialPosition - new Vector3(0f, translateDistance, 0f);
+        float direction = isFolding ? -1f : 1f;
+        Vector3 targetPosition = initialPosition + new Vector3(0f, direction * translateDistance, 0f);
 
         // Move the object towards the target position using MoveTowards
         translateObject.transform.position = Vector3.MoveTowards(translateObject.transform.position, targetPosition, translateSpeed * Time.deltaTime);
@@ -94,7 +97,14 @@ public class Fold_Unfold : MonoBehaviour
         {
             currentObjIndex = 0; // Reset index
             startRotation = true;
-            nextRotationTime = Time.time + intervals[currentObjIndex]; // Initialize nextRotationTime
+            if (isFolding)
+            {
+                nextRotationTime = Time.time + intervals[currentObjIndex]; // Initialize nextRotationTime
+            }
+            else
+            {
+                nextRotationTime = Time.time + intervals[intervals.Count - 1]; // Initialize nextRotationTime for unfold
+            }
         }
 
         if (translateObject != null)
@@ -102,5 +112,7 @@ public class Fold_Unfold : MonoBehaviour
             startTranslate = true;
             initialPosition = translateObject.transform.position; // Reset initial position
         }
+
+        isFolding = !isFolding; // Toggle between folding and unfolding
     }
 }
